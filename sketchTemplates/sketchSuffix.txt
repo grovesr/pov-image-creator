@@ -1,0 +1,816 @@
+void init_gui() {
+  String theStyle="";
+  String theOrder="";
+  int rows [] = {
+    height-controlHeight+controlBorder-(widgetY+widgetBorder),
+    height-controlHeight+controlBorder,
+    height-controlHeight+controlBorder+(widgetY+widgetBorder),
+    height-controlHeight+controlBorder+2*(widgetY+widgetBorder),
+    height-controlHeight+controlBorder+3*(widgetY+widgetBorder),
+    height-controlHeight+controlBorder+4*(widgetY+widgetBorder),
+    height-controlHeight+controlBorder+5*(widgetY+widgetBorder),
+    height-controlHeight+controlBorder+6*(widgetY+widgetBorder),
+    height-controlHeight+controlBorder+7*(widgetY+widgetBorder),
+    height-controlHeight+controlBorder+8*(widgetY+widgetBorder),
+  };
+  int columns [] = {
+    controlBorder,
+    width/4,
+    width/2,
+    3 * width / 4
+  };
+  cp5 = new ControlP5(this);
+  cp5.addTextlabel("persistentTitle")
+    .setText("RENDERING")
+      .setPosition(columns[0], rows[0])
+        ;
+  cp5.addToggle("persistent", true)
+    .setPosition(columns[0], rows[1])
+      .setSize(widgetY, widgetY)
+        .setCaptionLabel("")
+          ;
+  persistentLabel=cp5.addTextlabel("persistentLabel")
+    .setText("persistent")
+      .setPosition(columns[0]+widgetY+widgetYspace, rows[1]+widgetBorder)
+        ;
+  cp5.addTextlabel("standardSweepOrderTitle")
+    .setText("CHANNEL ORDER")
+      .setPosition(columns[0], rows[2])
+        ;
+  standardSweepOrderLabel=cp5.addTextlabel("standardSweepOrderLabel")
+    .setPosition(columns[0]+widgetY+widgetYspace, rows[3])
+      ;
+  sweepOrder(standardSweepOrder);
+  cp5.addToggle("sweepOrder", standardSweepOrder)
+    .setPosition(columns[0],rows[3])
+      .setSize(widgetY, widgetY)
+        .setCaptionLabel("")
+          ;
+  cp5.addTextlabel("radialModulationTitle")
+    .setText("RADIAL MODULATION")
+      .setPosition(columns[0], rows[4])
+        ;
+  radialModulationLabel=cp5.addTextlabel("radialModulationLabel")
+    .setPosition(columns[0]+widgetY+widgetYspace, rows[5])
+      ;
+  cp5.addToggle("radialModulation", radialModulation)
+    .setPosition(columns[0], rows[5])
+      .setSize(widgetY, widgetY)
+        .setCaptionLabel("")
+          ;
+  radialModulation(radialModulation);
+  cp5.addTextlabel("enableSerialTitle")
+    .setText("ENABLE SERIAL")
+      .setPosition(columns[0], rows[6])
+        ;
+  enableSerialLabel=cp5.addTextlabel("enableSerialLabel")
+    .setPosition(columns[0]+widgetY+widgetYspace, rows[7])
+      ;
+  enableSerial(enableSerial);
+  cp5.addToggle("enableSerial", enableSerial)
+    .setPosition(columns[0], rows[7])
+      .setSize(widgetY, widgetY)
+        .setCaptionLabel("")
+          ;
+  cp5.addTextlabel("reflectTitle")
+    .setText("REFLECT")
+      .setPosition(columns[0], rows[8])
+        ;
+  reflectLabel=cp5.addTextlabel("reflectLabel")
+    .setPosition(columns[0]+widgetY+widgetYspace, rows[8])
+      ;
+  cp5.addToggle("reflect", enableSerial)
+    .setPosition(columns[0], rows[9])
+      .setSize(widgetY, widgetY)
+        .setCaptionLabel("")
+          ;
+  portList = cp5.addListBox("portList")
+    .setPosition(columns[1], rows[1])
+      .setSize(min(width/4-controlBorder, widgetXmax), 3*widgetY)
+        .setBarHeight(widgetY)
+          .setItemHeight(widgetY)
+            .setColorBackground(color(2, 52, 77))
+              .setColorActive(color(0, 108, 234))
+                .setColorForeground(color(1, 108, 158))
+                  ;
+
+  for (int j=0;j<ports.length;j++) {
+    ListBoxItem lbi = portList.addItem(ports[j], j);
+    String [] m=match(ports[j], "COM[0-9]+");
+    if (m!=null) {
+      portNum=ports[j];
+    }
+  }
+  highlightList(portList, portNum);
+  portList.getCaptionLabel().toUpperCase(true);
+  portList.getCaptionLabel().set("Port: "+portNum);  
+  orderList = cp5.addListBox("orderList")
+    .setPosition(columns[2], rows[1])
+      .setSize(min(width/4-controlBorder, widgetXmax), 5*widgetY)
+        .setBarHeight(widgetY)
+          .setItemHeight(widgetY)
+            .setColorBackground(color(2, 52, 77))
+              .setColorActive(color(0, 108, 234))
+                .setColorForeground(color(1, 108, 158))
+                  ;
+  for (int j=0;j<pixelOrders.length;j++) {
+    ListBoxItem lbi = orderList.addItem(pixelOrderNames[j], j);
+    String [] m=match(pixelOrderNames[j], "1,0,2");
+    if (m!=null) {
+      pixelOrder=pixelOrders[j];
+      theOrder=pixelOrderNames[j];
+    }
+  }
+  highlightList(orderList, theOrder);
+  orderList.getCaptionLabel().toUpperCase(true);
+  orderList.getCaptionLabel().set("RGB Order");
+  pixelList = cp5.addListBox("pixelList")
+    .setPosition(columns[3], rows[1])
+      .setSize(min(width/4-controlBorder, widgetXmax), 5*widgetY)
+        .setBarHeight(widgetY)
+          .setItemHeight(widgetY)
+            .setColorBackground(color(2, 52, 77))
+              .setColorActive(color(0, 108, 234))
+                .setColorForeground(color(1, 108, 158))
+                  ;
+  for (int j=0;j<pixelStyles.length;j++) {
+    ListBoxItem lbi = pixelList.addItem(pixelStyleNames[j], pixelStyles[j]);
+    String [] m=match(pixelStyleNames[j], "rounded");
+    if (m!=null) {
+      pixelStyle=pixelStyles[j];
+      theStyle=pixelStyleNames[j];
+    }
+  }
+  highlightList(pixelList, theStyle);
+  pixelList.getCaptionLabel().toUpperCase(true);
+  pixelList.getCaptionLabel().set("Style");
+  cp5.addSlider("povFrameRate", 0, 100, 100, width/2, rows[5]+widgetYspace, min(width/2-2*controlBorder, 2*widgetXmax), widgetY); 
+  logText = cp5.addTextarea("log")
+    .setPosition(columns[1], height-controlHeight+6*(widgetY+widgetBorder))
+      .setSize(width-columns[1]-2*controlBorder, controlHeight-6*(widgetY+widgetBorder)-controlBorder)
+        .setLineHeight(12)
+          .setColor(color(0))
+            .setColorBackground(color(255, 100))
+              .setColorForeground(color(255, 100));
+  logText.scroll(screenSize);
+  baudField=cp5.addTextfield("baudField")
+    .setText(str(usart_baud))
+      .setPosition(columns[1], rows[5]+widgetYspace)
+        .setSize(min(width/4-controlBorder, widgetXmax), widgetY)
+          .setCaptionLabel("")
+            .setAutoClear(false)
+              ;
+  baudTitle=cp5.addTextlabel("baudTitle")
+    .setText("BAUD: "+str(usart_baud))
+      .setPosition(columns[1], rows[4]+widgetYspace)
+        ;
+}
+public void blankLabel(Textlabel theLabel) {
+  PVector loc=theLabel.getPosition();
+  int labelWidth=theLabel.get().getWidth();
+  int labelHeight=theLabel.get().getHeight();
+  stroke(bgColor);
+  fill(bgColor);
+  rect(loc.x+1, loc.y+1, labelWidth+1, labelHeight+1);
+}
+public void povFrameRate(int theValue) {
+  del=100-theValue;
+}
+public void baudField(String theValue) {
+  usart_baud=int(theValue);
+  if (myPort != null) {
+      myPort.stop();
+  }
+  myPort = new Serial(this, portNum, usart_baud);
+  // don't generate a serialEvent() unless you get a newline character:
+  myPort.bufferUntil('\n');
+  blankLabel(baudTitle);
+  baudTitle.setText("BAUD: "+str(usart_baud));
+}
+
+public void sweepOrder(boolean theFlag) {
+  standardSweepOrder=theFlag;
+  blankLabel(standardSweepOrderLabel);
+  if (theFlag) {
+    standardSweepOrderLabel.setValue("0,1,2...15");
+  } 
+  else {
+    standardSweepOrderLabel.setValue("15,14,...0");
+  }
+}
+public void radialModulation(boolean theFlag) {
+  radialModulation=theFlag;
+  blankLabel(radialModulationLabel);
+  if (theFlag) {
+    radialModulationLabel.setValue("radial modulated");
+  } 
+  else {
+    radialModulationLabel.setValue("constant");
+  }
+}
+public void enableSerial(boolean theFlag) {
+  enableSerial=theFlag;
+  blankLabel(enableSerialLabel);
+  if (theFlag) {
+    enableSerialLabel.setValue("enabled");
+    if (myPort != null) {
+      myPort.stop();
+    }
+    myPort = new Serial(this, portNum, usart_baud);
+    // don't generate a serialEvent() unless you get a newline character:
+    myPort.bufferUntil('\n');
+    initialize();
+  } 
+  else {
+    enableSerialLabel.setValue("disabled");
+    if(myPort != null) { 
+      myPort.stop();
+    }
+  }
+  initialize();
+}
+public void highlightList(ListBox theList, String theValue) {
+  String [] [] listBoxItems=theList.getListBoxItems();
+  for (int k=0;k<listBoxItems.length;k++) {
+    ListBoxItem lbi = theList.getItem(k);
+    if (listBoxItems[k][0].equals(theValue)) {
+      lbi.setColorBackground(color(1, 108, 158));
+      theList.scroll(float(k+1)/listBoxItems.length);
+    } 
+    else {
+      lbi.setColorBackground(color(2, 52, 77));
+    }
+  }
+}
+public void setLogText() {
+  // lose old log text if it becomes longer than 2^15
+  log=log.substring((int)max(0, log.length()-pow(2, 15)), log.length());
+  logText.setText(log);
+}
+
+public void keyPressed() {
+  if (key=='c') {
+    logText.setText("cleared log\n");
+    log="";
+  }
+}
+
+void draw () {
+  if (reflect) {
+    count += displayDirection;
+    if (count < frame*increments[image] || count > ((frame+1)*increments[image] - 1)) {
+      // cut the delay in half at the edges if reflecting so the end lines don't have too much delay
+      delay(del/2);
+      if (count < frame*increments[image]) {
+        displayDirection=1;
+        frame+=1;
+
+        count=frame*increments[image];
+        if (frame >= numFrames[image]) {
+          frame=0;
+          count=0;
+          image+=1;
+        }
+      }
+      if (image >= byteString.size()) {
+        image=0;
+        frame=0;
+        count=0;
+      }
+      if (count >= (frame+1)*increments[image]) {
+        displayDirection=-1;
+        count=(frame+1)*increments[image] - 1;
+      }
+    } 
+    else {
+      delay(del);
+    }
+  } 
+  else {
+    count++;
+    delay(del);
+    if (image >= byteString.size()) {
+
+      image=0;
+    }
+    if (count >= (frame+1)*increments[image] - 1) {
+
+      frame+=1;
+    }
+    if (count >= increments[image]*numFrames[image]) {
+      image+=1;
+      frame=0;
+      count=0;
+    }
+  }
+  if (image >= byteString.size()) {
+    image=0;
+    frame=0;
+  }
+  //  turn off all LEDs
+  if (!persistent) {
+    ledsHex(byteString.get(image)[prevCount], prevCount, 0, image);
+  }
+  // turn on LEDs represented by "1" in the binaryString
+  ledsHex(byteString.get(image)[count], count, 1, image);
+  prevCount=count;
+}
+
+void serialEvent (Serial myPort) {
+  // wait for a new line on the serial port intrabdicating that the
+  // AVR is ready to receive data or transmit data
+  String inString = getStringFromPort();
+  // check to see if this is a reset string, if so extract the board address from it
+  if (inString.length()>14) {
+    if (inString.substring(inString.length()-(initiationString.length()+board_address.length()+1), inString.length()-(board_address.length()+1)).equals(initiationString)&& !transmissionInProgress) {
+      // character array representing the board address string "ZZxxZZ"
+      imageNo=0;
+      board_address=inString.substring(inString.length()-7, inString.length()-1);
+      byteStringCurrent=getCurrentByteString(int(board_address.substring(2, 4)));
+      println(board_address);
+      log=log+"Initialized by board "+board_address+"\n";
+      println("Initialized by board "+board_address);
+      initialize();
+      transmissionInProgress=true;
+      // handshake with the AVR to tell it that you are here and ready to send data
+      myPort.write('\n');
+      setLogText();
+      return;
+    }
+    if (inString.substring(inString.length()-(echoInitiationString.length()+board_address.length()+1), inString.length()-(board_address.length()+1)).equals(echoInitiationString)&& !transmissionInProgress) {
+      // we are doing a compare
+      // character array representing the board address string "ZZxxZZ"
+      board_address=inString.substring(inString.length()-7, inString.length()-1);
+      println(board_address);
+      log=log+"Initialized data compare by board "+board_address+"\n";
+      println("Initialized data compare by board "+board_address);
+      // handshake with the AVR to tell it that you are here and ready to send data
+      initialize();
+      compareInProgress=true;
+      sendDirection=1;
+      myPort.write('\n');
+      setLogText();
+      return;
+    }
+  }
+  if (transmissionInProgress && !inString.substring(inString.length()-7, inString.length()-1).equals(board_address)) {
+    //we received some kind of disallowed communication attempt.  Board address doesn't match
+    println("invalid attempt");
+    initialize();
+    return;
+  }
+  if (compareInProgress) {
+    // receive data back from the AVR and dump it to the screen and a file
+    Boolean saveAll=true;
+    // strip off the board address and \n
+    board_address=inString.substring(inString.length()-(board_address.length()+1), inString.length()-1);
+    inString=inString.substring(0, inString.length()-(board_address.length()+1));
+    if (!inString.equals("9999")) {
+      inString=unConvertByteString(inString);
+    } 
+
+    if ((inString.length() == byteStringCurrent[0].length()) && compare) {
+      if (saveAll) {
+        receivedString.add(inString);
+      }
+      // this is a data string, not an initial CSV value or a terminator string and we have successfully compared so far
+      compare = byteStringCurrent[compareIndex].equals(inString);
+      if (!compare) {
+        receivedString.add("Failed at line "+nf(byteIndex, 3));
+        log=log+"Failed at line "+nf(byteIndex, 3)+"\n";
+        println("Failed at line "+nf(byteIndex, 3));
+        log=log+"receivedString = "+inString+"\n";
+        println("receivedString = "+inString);
+        log=log+"byteStringCurrent["+str(compareIndex)+"] = "+byteStringCurrent[compareIndex]+"\n";
+        println("byteStringCurrent["+str(compareIndex)+"] = "+byteStringCurrent[compareIndex]);
+        byteIndex += sendDirection;
+      }
+      byteIndex += sendDirection;
+      compareIndex += sendDirection;
+      if ((byteIndex >= byteStringCurrent.length) && reflect) {
+        sendDirection=-1;
+        byteIndex += sendDirection;
+        compareIndex += sendDirection;
+      } 
+      println("Received line: "+nf(compareIndex-sendDirection, 3));
+      log=log+"Received line: "+nf(compareIndex-sendDirection, 3)+"\n";
+    } 
+    else {
+      if (saveAll) {
+        receivedString.add(inString);
+      }
+    }
+    if (inString.equals("9999")) {
+      // this is a termination string indicating we have received all the data
+      if (compare) {
+        receivedString.add("Successfully compared "+nf(compareIndex, 3)+" lines from board "+board_address);
+        log=log+"Successfully compared "+nf(compareIndex, 3)+" lines from "+board_address+"\n";
+        println("Successfully compared "+nf(compareIndex, 3)+" lines from "+board_address);
+      } 
+      else {
+        receivedString.add("Failure");
+      }
+      fileAppend(dataPath("receivedData.txt"), receivedString);
+      log=log+"Saved file "+dataPath("receivedData.txt")+"\n";
+      println("Saved file "+dataPath("receivedData.txt"));
+      // start over
+      initialize();
+
+
+      // handshake with the AVR to tell it that this is the end of the data
+      myPort.write(board_address);
+      myPort.write('\n');
+    }
+  } 
+  else {
+    //not a compare
+    if (sentNumImages && sentImageNum && sentFrameDelay && sentLineLength && sentNumLines  && sentNumBoards && sentNumFrames && sentGsFlag && !sentReflect) {
+      // reflect at the end of each sweep or just continue ar0ound the circle
+      if (reflect) {
+        myPort.write("1");
+      } 
+      else {
+        myPort.write("0");
+      }
+      // handshake with the AVR to tell it that this is the end of the data
+      myPort.write(board_address);
+      myPort.write('\n');
+      println("sent reflect "+str(reflect)+" to "+board_address);
+      sentReflect=true;
+    } 
+    else if (sentNumImages && sentImageNum && sentFrameDelay && sentLineLength && sentNumLines  && sentNumBoards && sentNumFrames && !sentGsFlag && !sentReflect) {
+      // greyscale image or not
+      if (gsFlag[imageNo]) {
+        myPort.write("1");
+      } 
+      else {
+        myPort.write("0");
+      }
+      // handshake with the AVR to tell it that this is the end of the data
+      myPort.write(board_address);
+      myPort.write('\n');
+      println("sent gsFlag "+str(gsFlag[imageNo])+" to "+board_address);
+      sentGsFlag=true;
+    } 
+    else if (sentNumImages && sentImageNum && sentFrameDelay && sentLineLength && sentNumLines  && sentNumBoards && !sentNumFrames && !sentGsFlag && !sentReflect) {
+      // number of frames in the animation or 0
+      myPort.write(str(numFrames[imageNo]));
+      //send a newline to tell the AVR that this is the end of a line
+      // handshake with the AVR to tell it that this is the end of the data
+      myPort.write(board_address);
+      myPort.write('\n');
+      println("sent num frames "+str(numFrames[imageNo])+" to "+board_address);
+      sentNumFrames=true;
+    } 
+    else if (sentNumImages && sentImageNum && sentFrameDelay && sentLineLength && sentNumLines  && !sentNumBoards && !sentNumFrames && !sentGsFlag && !sentReflect) {
+      // number of boards
+      myPort.write(str(numBoards));
+      // handshake with the AVR to tell it that this is the end of the data
+      myPort.write(board_address);
+      myPort.write('\n');
+      println("sent num boards "+str(numBoards)+" to "+board_address);
+      sentNumBoards=true;
+    } 
+    else if (sentNumImages && sentImageNum && sentFrameDelay && sentLineLength && !sentNumLines  && !sentNumBoards && !sentNumFrames && !sentGsFlag && !sentReflect) {
+      // number of raster lines in the image
+      myPort.write(str(byteString.get(imageNo).length/numFrames[imageNo]));
+      // handshake with the AVR to tell it that this is the end of the data
+      myPort.write(board_address);
+      myPort.write('\n');
+      println("sent num lines/frame "+str(byteString.get(imageNo).length/numFrames[imageNo])+" to "+board_address);
+      sentNumLines=true;
+    } 
+    else if (sentNumImages && sentImageNum && sentFrameDelay && !sentLineLength && !sentNumLines  && !sentNumBoards && !sentNumFrames && !sentGsFlag && !sentReflect) {
+      // first write information about the coming packet
+      // length of each line and number of lines
+      myPort.write(str(byteStringCurrent[0].length()/2));
+      // handshake with the AVR to tell it that this is the end of the data
+      myPort.write(board_address);
+      myPort.write('\n');
+      println("sent line length "+str(byteStringCurrent[0].length()/2)+" to "+board_address);
+      sentLineLength=true;
+    }
+    else if (sentNumImages && sentImageNum && !sentFrameDelay && !sentLineLength && !sentNumLines  && !sentNumBoards && !sentNumFrames && !sentGsFlag && !sentReflect) {
+      // first write information about the coming packet
+      // frame delay for animations
+      myPort.write(str(frameDelay[imageNo]));
+      // handshake with the AVR to tell it that this is the end of the data
+      myPort.write(board_address);
+      myPort.write('\n');
+      println("sent frame delay "+str(frameDelay[imageNo])+" to "+board_address);
+      sentFrameDelay=true;
+    }
+    else if (sentNumImages && !sentImageNum && !sentFrameDelay && !sentLineLength && !sentNumLines  && !sentNumBoards && !sentNumFrames && !sentGsFlag && !sentReflect) {
+      // first write information about the coming packet
+      // image number 
+      myPort.write(str(imageNo));
+      // handshake with the AVR to tell it that this is the end of the data
+      myPort.write(board_address);
+      myPort.write('\n');
+      println("sent image number "+str(imageNo)+" to "+board_address);
+      sentImageNum=true;
+    }
+    else if (!sentNumImages && !sentImageNum && !sentFrameDelay && !sentLineLength && !sentNumLines  && !sentNumBoards && !sentNumFrames && !sentGsFlag && !sentReflect) {
+      // first write information about the coming packet
+      // number of images in the sequence
+      myPort.write(str(numImages));
+      // handshake with the AVR to tell it that this is the end of the data
+      myPort.write(board_address);
+      myPort.write('\n');
+      println("sent number of images "+str(numImages)+" to "+board_address);
+      sentNumImages=true;
+    }
+    else if (sentNumImages && sentImageNum && sentFrameDelay && sentLineLength && sentNumLines  && sentNumBoards && sentNumFrames && sentGsFlag && sentReflect) {    
+
+      // write strings to the AVR until all strings have been written
+      //normally, we reverse the strng before sending it to the AVR, because that is what the
+      //the TLC5940s are expecting.  But, if the TLC5940s are placed such that the outputs show
+      //up in reverse order (i.e. 15,14,...0 instead of 0,1,...15), then we suppress the reversal
+      myPort.write(convertByteString(byteStringCurrent[byteIndex]));
+      log=log+"Sent Image: "+str(imageNo)+" line: "+nf(byteIndex, 3)+"\n";
+      println("Sent Image: "+str(imageNo)+" line: "+nf(byteIndex, 3));
+      byteIndex += sendDirection;
+      if (byteIndex==byteString.get(imageNo).length && !reflect) { 
+        // done writing strings to the AVR, terminate the packet with a carriage return, line feed
+        myPort.write('\r');
+        myPort.write(board_address);
+        myPort.write('\n');
+        log=log+"done sending packet to board "+board_address+"\n";
+        println("done sending packet to board "+board_address);
+        if (imageNo == numImages-1) {
+          transmissionInProgress=false;
+          println("set transmissionInProgress false");
+          imageNo=0;
+        } else {
+          imageNo++;
+          // get the byteString array for the next image
+          byteStringCurrent=getCurrentByteString(int(board_address.substring(2, 4)));
+          // get ready to send the next image
+          sentNumImages=false;
+          sentImageNum=false;
+          sentFrameDelay=false;
+          sentLineLength=false;
+          sentNumLines=false;
+          sentNumBoards=false;
+          sentNumFrames=false;
+          sentGsFlag=false;
+          sentReflect=false;
+        }
+        byteIndex=0;
+      } 
+      else {
+        if (byteIndex==byteString.get(imageNo).length && reflect) {
+          sendDirection=-1;
+          byteIndex += sendDirection;
+        }
+        if (byteIndex < 0 && reflect) {
+          // done writing strings to the AVR, terminate the packet with a carriage return, line feed
+          myPort.write('\r');
+          myPort.write(board_address);
+          myPort.write('\n');
+          log=log+"done sending packet to board "+board_address+"\n";
+          println("done sending packet to board "+board_address);
+
+          if (imageNo == numImages-1) {
+            transmissionInProgress=false;
+            imageNo=0;
+          } else {
+            imageNo++;
+            // get the byteString array for the next image
+            byteStringCurrent=getCurrentByteString(int(board_address.substring(2, 4)));
+            // get ready to send the next image
+            sentNumImages=false;
+            sentImageNum=false;
+            sentFrameDelay=false;
+            sentLineLength=false;
+            sentNumLines=false;
+            sentNumBoards=false;
+            sentNumFrames=false;
+            sentGsFlag=false;
+            sentReflect=false;
+          }
+          byteIndex=0;
+        } 
+        else {
+          // handshake with the AVR to tell it that this is the end of a line of data
+          myPort.write(board_address);
+          myPort.write('\n');
+        }
+      }
+    }
+  }
+  setLogText();
+}
+
+String convertByteString(String thisString) {
+  // Data from Processing looks like this for 12 bits per LED:
+  //        0              1       |        2              3       |       4               5       | channel number
+  //       123            456      |       789            123      |      456             789      | hex chars
+  // 0001 0010 0011 0100 0101 0110 | 0111 1000 1001 0001 0010 0011 | 0100 0101 0110 0111 1000 1001 | binary values (msb..lsb)
+  //
+  // First we check to see if this is an RGB LED sweep.  If so, we order the R, G, B
+  // 12 bit values such that they appear in the order expected by the hardware.
+  // This is used to make laying out the RGB LED connections more convenient, especially
+  // when inserting them in a breadboard.  This way we can place the LED pins in whatever
+  // adjacent order they appear and don't have to cross the leads.
+  //
+  // Next, we check standardSweepOrder to see if we need to reverse the string.
+  // If standardSweepOrder = true, we reverse the string before sending it to the
+  // AVR because the TLC5940 expects to receive the 12 bit values in order from 15..0
+  // Otherwise we skip reversing.
+  //
+  // If standardSweepOrder=true:
+  // 12 bit data to TLC5940 needs to look like this after reversing and before using SPI to shift in MSB first:
+  //        5              4       |        3              2       |       1               0       | channel number
+  //       789            456              123            789             456             123      | hex chars
+  // 0111 1000 1001 0100 0101 0110 | 0001 0010 0011 0111 1000 1001 | 0100 0101 0110 0001 0010 0011 | binary values (msb..lsb)
+  //
+  // So we need to process the sring by first segmenting it into symbols of 3 hex characters
+  // then reversing the order of those symbols
+  //
+  int j, k;
+  int kp[]= {
+    0, 2, 1
+  };
+  int addr = int(board_address.substring(2, 4));
+  int innerRad = numPixels[imageNo] / numBoards * addr;
+  int outerRad = numPixels[imageNo] / numBoards * (addr + 1) - 1;
+  String newString="";
+  String finalString="";
+  String modulatedString="";
+  // if radialModulation is enabled, scale the pixel brightness with min brightness at the center
+  // and  max brightness at the outer circumference since the LEDs in the center are on for a
+  // correspondingly longer time than those at the outer circumference
+  if (radialModulation) {
+    float modulationValue = 1.0;
+    float outerDiameter = 2.0 * PI * (numPixels[imageNo] + modAlpha);
+    for (j=0;j < thisString.length();j += hexCharsPerWord[imageNo]) {
+      modulationValue = (innerRad + j / hexCharsPerWord[imageNo] + modAlpha) * 2.0 * PI / outerDiameter;
+      for (k=0; k < hexCharsPerWord[imageNo] ; k += 3) {
+        modulatedString = modulatedString + hex(int(unhex(thisString.substring(j+k, j+k+3))*modulationValue), 3).toLowerCase();
+      }
+    }
+  } 
+  else {
+    modulatedString = thisString;
+  }
+  for (j=0;j < modulatedString.length();j += 9) {
+    if (j%72 < 36 ) {
+      // first set of 12 leds for a chip use pixelOrder
+      for (k=0;k < 3;k++) {
+        newString=newString + modulatedString.substring(j+pixelOrder[k]*3, j+pixelOrder[k]*3+3);
+      }
+    } 
+    else {
+      // second set of 12 leds for a chip
+      // have to swap the 2nd and 3rd leds
+      for (k=0;k < 3;k++) {
+        newString=newString + modulatedString.substring(j+pixelOrder[kp[k]]*3, j+pixelOrder[kp[k]]*3+3);
+      }
+    }
+  }
+  if (standardSweepOrder) {
+    // reverse the string
+    for (j=0;j < newString.length();j += 3) {
+      // step through the newString grabbing 3 hex characters at a time
+      // and then tack them onto the finalString in reverse order
+      finalString=newString.substring(j, j + 3) + finalString;
+    }
+  } 
+  else {
+    // pass the string through in the original order
+    finalString = newString;
+  }
+  return finalString;
+}
+
+void fileAppend(String filename, ArrayList receivedString) {
+  // first try to read from file
+  //
+  String [] filestuff = loadStrings(filename);
+  // then, depending on what was found, do either ...
+  if (filestuff == null) {
+    // file is empty, just write words out, one per line
+    String[] newlist = new String[receivedString.size()];
+    for (int i=0; i < receivedString.size(); i++) {
+      newlist[i]=(String)receivedString.get(i);
+    }
+    saveStrings(filename, newlist);
+  } 
+  else {
+    // file has stuff in it, append words to filestuff, and write all of it out
+    String[] newlist = new String[receivedString.size()+filestuff.length];
+    // add old stuff to new list
+    for (int i=0; i < filestuff.length; i++) { 
+      newlist[i]=filestuff[i];
+    }
+    // Add new stuff to new list
+    for (int i=0; i < receivedString.size(); i++) {
+      newlist[i+filestuff.length]=(String) receivedString.get(i);
+    }
+    // then write complete array to file
+    saveStrings(filename, newlist);
+  }
+}
+
+String unConvertByteString(String thisString) {
+  // Data from Processing looks like this for 12 bits per LED:
+  //        0              1       |        2              3       |       4               5       | channel number
+  //       123            456      |       789            123      |      456             789      | hex chars
+  // 0001 0010 0011 0100 0101 0110 | 0111 1000 1001 0001 0010 0011 | 0100 0101 0110 0111 1000 1001 | binary values (msb..lsb)
+  //
+  // First we check to see if this is an RGB LED sweep.  If so, we order the R, G, B
+  // 12 bit values such that they appear in the order expected by the hardware.
+  // This is used to make laying out the RGB LED connections more convenient, especially
+  // when inserting them in a breadboard.  This way we can place the LED pins in whatever
+  // adjacent order they appear and don't have to cross the leads.
+  //
+  // Next, we check standardSweepOrder to see if we need to reverse the string.
+  // If standardSweepOrder = true, we reverse the string before sending it to the
+  // AVR because the TLC5940 expects to receive the 12 bit values in order from 15..0
+  // Otherwise we skip reversing.
+  //
+  // If standardSweepOrder=true:
+  // 12 bit data to TLC5940 needs to look like this after reversing and before using SPI to shift in MSB first:
+  //        5              4       |        3              2       |       1               0       | channel number
+  //       789            456              123            789             456             123      | hex chars
+  // 0111 1000 1001 0100 0101 0110 | 0001 0010 0011 0111 1000 1001 | 0100 0101 0110 0001 0010 0011 | binary values (msb..lsb)
+  //
+  // So we need to process the sring by first segmenting it into symbols of 3 hex characters
+  // then reversing the order of those symbols
+  //
+  int j, k;
+  int kp[]= {
+    2, 1, 0
+  };
+  String newString="";
+  String finalString="";
+  if (standardSweepOrder) {
+    // reverse the string
+    for (j=0;j < thisString.length();j += 3) {
+      // step through the newString grabbing 3 hex characters at a time
+      // and then tack them onto the finalString in reverse order
+      finalString=thisString.substring(j, j + 3) + finalString;
+    }
+  } 
+  else {
+    // pass the string through in the original order
+    finalString = thisString;
+  }
+  for (j=0;j < finalString.length();j += 9) {
+    if (j%72 < 36 ) {
+      // first set of 12 leds for a chip use pixelOrder
+      for (k=0;k < 3;k++) {
+        newString=newString + finalString.substring(j+pixelOrder[k]*3, j+pixelOrder[k]*3+3);
+      }
+    } 
+    else {
+      // second set of 12 leds for a chip
+      // have to swap the 2nd and 3rd leds
+      for (k=0;k < 3;k++) {
+        newString=newString + finalString.substring(j+pixelOrder[kp[k]]*3, j+pixelOrder[kp[k]]*3+3);
+      }
+    }
+  }
+  return newString;
+}
+
+void initialize() {
+  sentLineLength=false;
+  sentNumLines=false;
+  sentNumBoards=false;
+  sentNumFrames=false;
+  sentGsFlag=false;
+  sentReflect=false;
+  sendDirection=1;
+  sentFrameDelay=false;
+  sentNumImages=false;
+  sentImageNum=false;
+  byteIndex=0;
+  compareIndex=0;
+  compare=true;
+  imageNo=0;
+
+  transmissionInProgress=false;
+  compareInProgress=false;
+  receivedString = new ArrayList();
+}
+
+String getStringFromPort() {
+  String inString = new String(myPort.readBytesUntil('\n'));
+  // strip off a leading NULL if it is received.  Not sure why we get thi sometimes
+  if (inString.charAt(0)==0) {
+    inString=inString.substring(1, inString.length());
+  }
+
+  return inString;
+}
+String[] getCurrentByteString(int boardNum) {
+  String byteStringCurrent[] = {
+  };
+  int k=0;
+  for (k=0;k<byteString.get(imageNo).length;k++) {
+    byteStringCurrent=append(byteStringCurrent, byteString.get(imageNo)[k].substring(boardNum*byteString.get(imageNo)[0].length()/numBoards, (boardNum + 1)*byteString.get(imageNo)[0].length()/numBoards));
+  }
+  return byteStringCurrent;
+}

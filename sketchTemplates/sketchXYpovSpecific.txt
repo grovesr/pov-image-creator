@@ -1,0 +1,191 @@
+
+// size of each dot in pixels
+float pixelXSize = 1;
+float pixelSize = 1;
+//sweptLength
+float sweptLength = 1;
+
+void setup () {{
+  size({SCREENX},{SCREENY});
+  //if(aspectRatio <= 1) {{
+  //    pixelXSize = int((screenSize * aspectRatio)/numLines);
+  //    pixelSize = int(float(screenSize)/partialSet/numPixels);
+  //}} else {{
+  //    pixelXSize = int(float(screenSize)/numLines);
+  //    pixelSize = int(float(screenSize)/partialSet/aspectRatio/numPixels);
+  //}}
+  // screen size, remember, we can't actually create a window smaller than 128 pixels in any dimension
+  // for some reason.  This makes third sets have a border sometimes
+  //size(numLines*pixelXSize,numPixels*pixelSize+2*controlBorder+controlHeight);
+  pixelXSize={PIXELXSIZE};
+  pixelSize={PIXELSIZE};
+  // delete the log file
+  File fileToDelete = new File(dataPath("receivedData.txt"));
+  fileToDelete.delete();
+  sweptLength=partialSet * numPixels * {PIXELSIZE};
+  background(bgColor);     
+  init_gui(); 
+  if(enableSerial) {{
+    myPort = new Serial(this, portNum, usart_baud);
+    // don't generate a serialEvent() unless you get a newline character:
+    myPort.bufferUntil('\n');
+  }}
+  log=log+"length of the lines = "+str(byteString[0].length())+"\n";
+  println("length of the lines = "+str(byteString[0].length()));
+  log=log+"number of lines = "+str(byteString.length)+"\n";
+  println("number of lines = "+str(byteString.length));
+  log=log+"numBoards = "+str(numBoards)+"\n";
+  println("numBoards = "+str(numBoards));
+  log=log+"numFrames = "+str(numFrames)+"\n";
+  println("numFrames = "+str(numFrames));
+  log=log+"gsFlag = "+str(gsFlag)+"\n";
+  println("gsFlag = "+str(gsFlag));
+  log=log+"reflect = "+str(reflect)+"\n";
+  println("reflect = "+str(reflect));
+  setLogText();
+}}
+public void persistent(boolean theFlag) {{
+  persistent=theFlag;
+  blankLabel(persistentLabel);
+  if (theFlag) {{
+    persistentLabel.setValue("persistent");
+  }} 
+  else {{
+    persistentLabel.setValue("sweep");
+  }}
+  count=0;
+  stroke(bgColor);
+  fill(bgColor);
+  rect(0, 0, width, sweptLength);
+}}
+public void controlEvent(ControlEvent theEvent) {{
+  // ListBox is of type ControlGroup.
+  // 1 controlEvent will be executed, where the event
+  // originates from a ControlGroup. therefore
+  // you need to check the Event with
+  // if (theEvent.isGroup())
+  // to avoid an error message from controlP5.
+
+  if (theEvent.isGroup() && theEvent.getName().equals("portList")) {{
+    portNum=ports[(int)theEvent.getGroup().getValue()];
+    if(myPort != null) {{
+      myPort.stop();
+    }}      
+    myPort = new Serial(this, portNum, usart_baud);
+    if (enableSerial && myPort != null) {{
+      // don't generate a serialEvent() unless you get a newline character:
+      myPort.bufferUntil('\n');
+    }}
+    highlightList(portList, portNum);
+    portList.getCaptionLabel().set("Port: "+portNum); 
+    return;
+  }}
+  if (theEvent.isGroup() && theEvent.getName().equals("pixelList")) {{
+    pixelStyle=pixelStyles[(int)theEvent.getGroup().getValue()];
+    highlightList(pixelList, pixelStyleNames[pixelStyle]);
+    count=0;
+    stroke(bgColor);
+    fill(bgColor);
+    rect(0, 0, width, sweptLength);
+    return;
+  }}
+  if (theEvent.isGroup() && theEvent.getName().equals("orderList")) {{
+    pixelOrder=pixelOrders[(int)theEvent.getGroup().getValue()];
+    highlightList(orderList, pixelOrderNames[(int)theEvent.getGroup().getValue()]);
+    log=log+"Pixel Order = "+pixelOrderNames[(int)theEvent.getGroup().getValue()]+"\n";
+    setLogText();
+    return;
+  }}
+  if (theEvent.getName().equals("sweepOrder")){{
+    log=log+"Channel Order = "+standardSweepOrderLabel.get().getText()+"\n";
+    setLogText();
+    println("Channel Order = "+standardSweepOrderLabel.get().getText());
+  }}
+}}
+// end of XYPOV, RPOV specific
+
+// beginning 0f XYPOV and RPOV specific code
+void drawPixelRounded(float thisX, float thisY)
+{{
+  // Draw a rounded XYPOV pixel
+  ellipse(thisX,thisY+pixelSize/2,pixelSize,pixelSize);
+  ellipse(thisX+pixelXSize,thisY+pixelSize/2,pixelSize,pixelSize);
+  rect(thisX,thisY,pixelXSize,pixelSize);
+}}
+void drawPixelSquared(float thisX, float thisY)
+{{
+  // Draw a squared XYPOV pixel
+  rect(thisX,thisY,pixelXSize,pixelSize);
+}}
+void drawPixelCircular(float thisX, float thisY)
+{{
+  // Draw a circular XYPOV pixel
+  ellipse(thisX+pixelSize/2,thisY+pixelSize/2,pixelSize,pixelSize);
+}}
+
+void ledsHex(String hexString, int thisCount, int drawErase) {{
+  // hexString is assumed to consist of numPixels "words":
+  // Depending on the value of "rgb" each "word" in hexString consists of one of the following formats:
+  //   hexCharsPerWord == 6:
+  //      6 hexadecimal numbers each
+  //      representing R G B values for the pixel (8 bits resolution on each color)
+  //      i.e. "9aa89d 916e6a b8776e 9f9f98 ..." spaces added for emphasis
+  //   hexCharsPerWord == 2:
+  //      2 hexadecimal numbers each
+  //      representing greyscale values for the pixel (8 bits resolution)
+  //      i.e. "9a a8 9d 91 6e 6a b8 ..." spaces added for emphasis
+  // count tells us where in the X directed sweep we are
+  // drawErase tells us to either draw the pixel or erase it
+  if (hexString.length()/hexCharsPerWord != numPixels) {{
+    exit();
+}}
+  int redValue = 0;
+  int grnValue = 0;
+  int bluValue = 0;
+  int gsValue = 0;
+  int hexIndexIncr = 3; // number of hex characters per individual LED (3=12 bits)
+  for (int k=0;k < numPixels * hexCharsPerWord;k += hexCharsPerWord) {{
+    if(k < numPixels * hexCharsPerWord - 1) {{
+      if(gsFlag) {{
+        gsValue=unhex(hexString.substring( k,k+hexIndexIncr));
+    }} else {{ 
+        redValue=unhex(hexString.substring( k,k+hexIndexIncr));
+        grnValue=unhex(hexString.substring(k+hexIndexIncr,k+2*hexIndexIncr));
+        bluValue=unhex(hexString.substring(k+2*hexIndexIncr,k+3*hexIndexIncr));
+    }}
+   }} else {{
+      if(gsFlag) {{
+        gsValue=unhex(hexString.substring( k,k+hexIndexIncr-1));
+     }} else {{ 
+        redValue=unhex(hexString.substring( k,k+hexIndexIncr));
+        grnValue=unhex(hexString.substring(k+hexIndexIncr,k+2*hexIndexIncr));
+        bluValue=unhex(hexString.substring(k+2*hexIndexIncr,k+3*hexIndexIncr-1));
+     }}
+   }}
+    if( drawErase == 0) {{
+      stroke(bgColor);
+      fill(bgColor);
+   }} else {{
+      // rescale them to 8 bits resolution for display
+      if(gsFlag) {{
+        stroke(int(gsValue / (1.0 * numGSClockCycles/ 256)));
+        fill(int(gsValue / (1.0 * numGSClockCycles / 256)));
+     }} else {{
+        stroke(int(redValue / (1.0 * numGSClockCycles / 256)),int(grnValue / (1.0 * numGSClockCycles / 256)),int(bluValue / (1.0 * numGSClockCycles / 256)));
+        fill(int(redValue / (1.0 * numGSClockCycles / 256)),int(grnValue / (1.0 * numGSClockCycles / 256)),int(bluValue / (1.0 * numGSClockCycles / 256)));
+     }}
+   }}
+	// draw the pixel. make sure to offset and scale the starting Y value appropriately if this
+	// is a half set sketch
+    if (pixelStyle == 0) {{
+      drawPixelRounded(thisCount * pixelXSize, ((numPixels * hexCharsPerWord - k) / hexCharsPerWord - 1) * pixelSize);
+    }} else if (pixelStyle == 1) {{
+      drawPixelSquared(thisCount * pixelXSize, ((numPixels * hexCharsPerWord - k) / hexCharsPerWord - 1) * pixelSize);
+    }} else if (pixelStyle == 2) {{
+      drawPixelCircular(thisCount * pixelXSize, ((numPixels * hexCharsPerWord - k) / hexCharsPerWord - 1) * pixelSize);
+    }}
+ }}
+}}
+ 
+
+// end of XYPOV, RPOV specific

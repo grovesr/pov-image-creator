@@ -1,0 +1,176 @@
+import java.io.File;
+import processing.serial.*;
+import controlP5.*;
+
+// Global control variables
+// screen size
+int screenSize = {SCREENSIZE};
+ControlP5 cp5;
+ListBox portList;
+ListBox pixelList;
+ListBox orderList;
+Textlabel persistentLabel;
+Textlabel standardSweepOrderLabel;
+Textlabel radialModulationLabel;
+Textlabel enableSerialLabel;
+Textlabel reflectLabel;
+Textarea logText;
+Textlabel baudTitle;
+Textfield baudField;
+int controlHeight = {CONTROLHEIGHT};
+int controlBorder = {CONTROLBORDER};
+int widgetY = 10;
+int widgetXmax = 80;
+int widgetYspace = 5;
+int widgetBorder = 1;
+String log="";
+boolean enableSerial = false;
+String [] ports = Serial.list();
+String [] pixelStyleNames = {{
+  "rounded", "squared", "circular"
+}};
+int [] pixelStyles = {{
+  0, 1, 2
+}};
+// pixel drawing style
+// pixelStyle = 0 -> rounded arc, should be most realistic
+// pixelStyle = 1 -> aquared arc, the arc ends are straight, so no pixel overlap
+// pixelStyle = 2 -> circular pixel with no stretching in the circumferential dimension to mimic POV
+int pixelStyle = 0; 
+//Set this to 1 if you want to mimic perfect POV
+boolean persistent=true;
+// order of Driver outputs from lower portion of picture to upper
+// true means outputs go from 0 to 15 as you move from center to outer circumference
+// false means the opposite
+boolean standardSweepOrder = true;
+// this sets up storing a reflected image in flash memory after the main image.
+// This is used in XY POV so we don't have to blank while sweeping all the way back to the left
+// after completing a left-right sweep.  We just output the reversed image  from right-left
+// as we physically move the LEDs back to the starting point
+boolean reflect = true;
+int displayDirection=1;
+int sendDirection=1;
+// order of RGB LED triplets if used
+// [0,1,2] = red, green blue
+// [1,0,2] = green, red, blue
+// ...
+String [] pixelOrderNames = {{
+  "{{0,1,2}}", "{{0,2,1}}", "{{1,0,2}}", "{{1,2,0}}", "{{2,0,1}}", "{{2,1,0}}"
+}};
+int pixelOrders[][] = {{
+  {{
+    0, 1, 2
+  }}
+  , 
+  {{
+    0, 2, 1
+  }}
+  , 
+  {{
+    1, 0, 2
+  }}
+  , 
+  {{
+    1, 2, 0
+  }}
+  , 
+  {{
+    2, 0, 1
+  }}
+  , 
+  {{
+    2, 1, 0
+  }}
+}};
+// default pixel order green, blue, red
+int [] pixelOrder= {{
+  1, 0, 2
+}};
+// delay per image line in ms (for Processing display only)
+int del = 0;
+// Set this to 1 if you want to mimic the brightness modulation required to get an
+// even brightness throughout the radius of the image.  Center pixels get less brightness
+// than edge pixels because they are on for a correspondingly longer time.
+// modAlpha sets the point on the radius, in LED pixels, where the brightness is minimum
+// a value of 1 puts the origin pixel at the point equal to 1 LED pixel  out from 0
+// a value of 0 puts the origin pixel at 0 which means that the modulationValue at that point
+// = 0 or no display
+// Higher numbers make the origin pixel brighter
+// ONLY APPLIES TO RPOV, IGNORED FOR XYPOV
+Boolean radialModulation = true;
+// a value of 0.5 means that the LED inner edge is at the exact center of the circle
+float modAlpha = 0.5;
+
+Serial myPort;        // The serial port
+
+static Boolean transmissionInProgress=false;
+static Boolean compareInProgress=false;
+static Boolean sentLineLength=false;
+static Boolean sentNumLines=false;
+static Boolean sentNumBoards=false;
+static Boolean sentNumFrames=false;
+static Boolean sentGsFlag=false;
+static boolean sentReflect=false;
+static Boolean sentFrameDelay=false;
+static Boolean sentNumImages=false;
+static Boolean sentImageNum=false;
+static int byteIndex=0;
+static int compareIndex=0;
+static Boolean compare=true;
+ArrayList receivedString = new ArrayList();
+String portNum = "COM8";
+int usart_baud = 250000;
+String board_address = "ZZ00ZZ";
+String initiationString = "99999999";
+String echoInitiationString = "ZZZZZZZZ";
+//number of raster lines in one frame
+int[] increments = {NUMPIXELSOUTER};
+// degree counter
+int count=0;
+// image index for display
+int image = 0;
+// image index for serial communication with board
+int imageNo = 0;
+// frame index for display
+int frame = 0;
+int prevCount = 1;
+// background color
+color bgColor = color(0);
+
+// sweep a line similar to a clock second hand
+// This is in preparation for making a swept POV display
+// using RGB or single color LEDs and Drivers.  The proposed display
+// will have some LEDs to make up the "clock second hand"
+// it will sweep the clock face and flash the LEDs intermittently
+// to create a POV display
+//
+//
+// numGSClockCycles is the number of clock cycles before we reset the Driver.  This defines the 
+// maximum achievable brightness value.  If we are using all 12 bits available this will be 4096.
+// If we are going to reset after transferring the data (numGSClockCycles), then this number will define
+// the maximum achievable brightness value.  We have to re-scale the values we received from Python
+// (byteString[]) during RPOV simulation because Processing using 8 bits for brightness
+int numImages={NUMIMAGES};
+// number frames in each image
+int[] numFrames= {NUMFRAMES};
+// frame delay for each animation
+int[] frameDelay= {FRAMEDELAY};
+//  number of boards required to display complete image
+int numBoards={NUMBOARDS};
+String[] images = {IMAGES};
+ArrayList<String[]> byteString = new ArrayList<String[]>();
+boolean[] gsFlag = {GSFLAG};
+int[] hexCharsPerWord = {HEXCHARSPERWORD};
+// number of LED pixels
+int[] numPixels = new int[{NUMIMAGES}];
+// size of each dot in pixels
+float[] pixelSize = new float[{NUMIMAGES}];
+// set the number of degrees per rotation
+float deg = 360.0;
+// number of degrees per increment
+float[] increment = new float[{NUMIMAGES}];
+
+float sweptLength;
+// the origin
+float[] origin = new float[2];
+
